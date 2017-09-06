@@ -1,6 +1,6 @@
-# fitnessguideapp
+# fitnesshelperapp
 
-> Tips & tricks + mealplanner app
+> Tips & tricks + recipe recommendations based on user profile
 
 ## Build Setup
 
