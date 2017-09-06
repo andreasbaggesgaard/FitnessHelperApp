@@ -12,7 +12,7 @@ export default {
       return this.$store.getters.getSelectedRecipe
     }
   }
-}
+} 
 </script>
 
 <style scoped>
