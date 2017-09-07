@@ -16,19 +16,26 @@ export const store = new Vuex.Store({
     state: {
         users: [
             {id: 1, name: 'Andreas', 
-            interests: {running: false, bodybuilding: true, biking: false}, 
+            interests: {running: false, bodybuilding: false, biking: false}, 
             vegan: false, 
-            macros: {carbs:400, protein: 0, fats: 80},
+            macros: {carbs:349, protein: 140, fats: 80},
             carbsHigh: false,
             carbsLow: false,
             proteinHigh: false,
             proteinLow: false,
-            fatHigh: false,
+            fatHigh: true,
             fatLow: false,
+            fattransHigh: false,
+            fattransLow: false,
+            fatsatHigh: false,
+            fatsatLow: false,
             fiberHigh: false,
             fiberLow: false,
+            cookTime2h: false,
+            cookTime1h: false,
+            cookTime05h: false
             },
-            {id: 2, name: 'Peter', interests: ['bodybuilding'], vegan: false, macros: [400, 150, 80], },
+            {id: 2, name: 'Kasper', interests: ['bodybuilding'], vegan: false, macros: [400, 150, 80], },
             {id: 3, name: 'Jens', interests: ['biking'], vegan: false, macros: [400, 150, 80]}
         ],
         recipes: [],
@@ -104,31 +111,36 @@ export const store = new Vuex.Store({
             let u = context.state.users[0];
             let i = context.state.users[0].interests;
 
-            // bodybuilding only 
-            if(i.bodybuilding && !u.carbsHigh && !u.carbsLow && !u.proteinLow && !u.fatHigh && !u.fatLow && !u.fiberHigh && !u.fiberLow && u.macros.protein == 0) {
-                userPreferences = "bodyOnly"
-            // protein only
-            } else if(u.bodybuilding == false && !s.carbsHigh && !s.carbsLow && !s.proteinLow && !s.fatHigh && !s.fatLow && !s.fiberHigh && !s.fiberLow && u.macros.protein >= 140) {
-                userPreferences = "highProteinOnly"
-            // high protein
-            } else if(u.protein >= 140 && !s.carbsHigh && !s.carbsLow && !s.proteinLow && !s.fatHigh && !s.fatLow && !s.fiberHigh && !s.fiberLow
-            || u.bodybuilding == true && !s.carbsHigh && !s.carbsLow && !s.proteinLow && !s.fatHigh && !s.fatLow && !s.fiberHigh && s.fiberLow) {
-                userPreferences = "test";
-            // high protein - high carbs
-            } else if(u.protein >= 140) {
-                userPreferences = "test2";
-            // low protein
-            } else if(u.protein >= 140) {
-                //userPreferences = "&nutrition.PROCNT.min=0&nutrition.PROCNT.max=0";
-            // high carbs
-            } else if(u.protein >= 140){
-                //userPreferences = "&nutrition.CHOCDF.min=20&nutrition.CHOCDF.max=50";
-            // low carbs
-            } else if(u.protein >= 140){
-                //userPreferences = "&nutrition.CHOCDF.min=0&nutrition.CHOCDF.max=0";
-            } else {
-                userPreferences = "end";
-            }
+            // Protein high
+            i.bodybuilding && !u.proteinLow || u.proteinHigh || u.macros.protein >= 140 && !u.proteinLow ? userPreferences += "&nutrition.PROCNT.min=20&nutrition.PROCNT.max=50" : userPreferences += "";
+            // Protein low
+            u.proteinLow || u.macros.protein <= 80 ? userPreferences += "&nutrition.PROCNT.min=0&nutrition.PROCNT.max=5" : userPreferences += "";
+            // Carbs high
+            i.running && !u.carbsLow || i.biking && !u.carbsLow || u.carbsHigh || u.macros.carbs >= 350 && !u.carbsLow ? userPreferences += "&nutrition.CHOCDF.min=20&nutrition.CHOCDF.max=50" : userPreferences += "";
+            // Carbs low
+            u.carbsLow || u.macros.carbs <= 250 ? userPreferences += "&nutrition.CHOCDF.min=0&nutrition.CHOCDF.max=5" : userPreferences += "";
+            // Fat high
+            u.fatHigh || u.macros.fats >= 90 && !u.fatLow ? userPreferences += "&nutrition.FAT.min=20&nutrition.FAT.max=50" : userPreferences += "";
+            // Fat low
+            u.fatLow || u.macros.fats <= 60 ? userPreferences += "&nutrition.FAT.min=0&nutrition.FAT.max=5" : userPreferences += "";
+            // Fatty acids, total trans - high
+            u.fattransHigh ? userPreferences += "&nutrition.FATRN.min=20&nutrition.FATRN.max=50" : userPreferences += "";
+            // Fatty acids, total trans - low
+            u.fattransLow ? userPreferences += "&nutrition.FATRN.min=0&nutrition.FATRN.max=5" : userPreferences += "";
+            // Fatty acids, total saturated	- high
+            u.fatsatHigh ? userPreferences += "&nutrition.FASAT.min=20&nutrition.FASAT.max=50" : userPreferences += "";
+            // Fatty acids, total saturated	- low
+            u.fatsatLow ? userPreferences += "&nutrition.FASAT.min=0&nutrition.FASAT.max=5" : userPreferences += "";
+            // Fiber high 
+            u.fiberHigh ? userPreferences += "&nutrition.FIBTG.min=20&nutrition.FIBTG.max=50" : userPreferences += "";
+            // Fiber low
+            u.fiberLow ? userPreferences += "&nutrition.FIBTG.min=0&nutrition.FIBTG.max=5" : userPreferences += "";
+            // Cook time 2 hours max
+            u.cookTime2h ? userPreferences += "&maxTotalTimeInSeconds=7200" : userPreferences += "";
+            // Cook time 1 hour max
+            u.cookTime1h ? userPreferences += "&maxTotalTimeInSeconds=3600" : userPreferences += "";
+            // Cook time 0.5 hour max
+            u.cookTime05h ? userPreferences += "&maxTotalTimeInSeconds=1800" : userPreferences += "";
             
             axios.get(YummlyGetRecipes + "&maxResult=" + context.state.currentScrollNumber + "&start=10" + userPreferences)
             .then(response => {

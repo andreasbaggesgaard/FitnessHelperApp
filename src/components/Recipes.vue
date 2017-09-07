@@ -11,8 +11,8 @@
     <v-flex xs12 sm4 v-for="(recipe, index) in recipes.matches" :key="index">
       <v-card>
         <v-card-media v-if="recipe.smallImageUrls"
-          v-bind:src="recipe.smallImageUrls[0]"
-          height="200px"
+          v-bind:src="changeImageSize(recipe.smallImageUrls[0])"
+          width="287" height="287"
           v-on:click.prevent="getRecipe(recipe)">
         </v-card-media>
         <v-card-title primary-title>
@@ -64,6 +64,9 @@ export default {
                 console.log(this.currentScrollNumber)
             } 
          }        
+      },
+      changeImageSize (string) {
+        return string = string.substring(0, string.length-3) + "s320";
       }
   },
   computed: {
