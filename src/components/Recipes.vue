@@ -57,11 +57,14 @@ export default {
       },
       handleScroll () {
         if(!this.enabled) {
+            let self = this;
             let scrollHeight = $(document).height();
             let scrollPosition = $(window).height() + $(window).scrollTop();
             if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
-                this.$store.dispatch('fetchRecipes')
-                console.log(this.currentScrollNumber)
+                this.$store.dispatch('fetchAuthUser');
+                setTimeout(function(){ self.$store.dispatch('fetchRecipes') }, 1000);            
+                this.$store.dispatch('listenForChanges');
+                console.log(this.currentScrollNumber);         
             } 
          }        
       },
@@ -88,7 +91,9 @@ export default {
   },
   mounted () {
     if(!this.enabled) {
+        this.$store.dispatch('fetchAuthUser')
         this.$store.dispatch('fetchRecipes')
+        this.$store.dispatch('listenForChanges')
     }    
   }
 }

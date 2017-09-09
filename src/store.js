@@ -1,6 +1,7 @@
 import Vue from 'vue';
 import Vuex from 'vuex';
 import { HTTP } from '@/services/axios';
+import { database } from '@/services/db';
 import axios from 'axios';
 import router from '@/router/index';
 
@@ -14,30 +15,8 @@ const YummlyGetRecipe = "http://api.yummly.com/v1/api/recipe/"
 
 export const store = new Vuex.Store({
     state: {
-        users: [
-            {id: 1, name: 'Andreas', 
-            interests: {running: false, bodybuilding: false, biking: false}, 
-            vegan: false, 
-            macros: {carbs:349, protein: 140, fats: 80},
-            carbsHigh: false,
-            carbsLow: false,
-            proteinHigh: false,
-            proteinLow: false,
-            fatHigh: true,
-            fatLow: false,
-            fattransHigh: false,
-            fattransLow: false,
-            fatsatHigh: false,
-            fatsatLow: false,
-            fiberHigh: false,
-            fiberLow: false,
-            cookTime2h: false,
-            cookTime1h: false,
-            cookTime05h: false
-            },
-            {id: 2, name: 'Kasper', interests: ['bodybuilding'], vegan: false, macros: [400, 150, 80], },
-            {id: 3, name: 'Jens', interests: ['biking'], vegan: false, macros: [400, 150, 80]}
-        ],
+        currentUser: null,
+        //currentUser: firebase.auth().currentUser
         recipes: [],
         selectedRecipe: [],
         currentScrollNumber: 12,
@@ -72,14 +51,17 @@ export const store = new Vuex.Store({
         // }
     },
     mutations: {
-        pushRecipes(state, data) {
+        pushRecipes (state, data) {
             state.recipes = data;
             state.currentScrollNumber = state.currentScrollNumber + 15;
         },
-        pushSelectedRecipe(state, payload) {
+        pushSelectedRecipe (state, payload) {
             state.selectedRecipe = payload;
             router.push({ name: 'recipe', params: { recipeID: payload.id }}) 
-        }
+        },
+        setUser (state, payload) {
+            state.currentUser = payload
+        },
         // register(state, userId) {
         //     const date = new Date;
         //     const user = state.users.find(user => {
@@ -105,11 +87,53 @@ export const store = new Vuex.Store({
         // }
     }, 
     actions: {
-        fetchRecipes(context) {
-            context.state.loading = true;
+        fetchAuthUser ({commit, state}){
+            database.users.once('value').then((data) => {
+                const obj = data.val()
+                const authUser = []
+
+                for (let key in obj) {
+                    authUser.push({
+                        id: key,
+                        firstname: obj[key].firstname,
+                        lastname: obj[key].lastname,
+                        interests: obj[key].interests, 
+                        vegan: obj[key].vegan, 
+                        macros: obj[key].macros,
+                        carbsHigh: obj[key].carbsHigh,
+                        carbsLow: obj[key].carbsLow,
+                        proteinHigh: obj[key].proteinHigh,
+                        proteinLow: obj[key].proteinLow,
+                        fatHigh: obj[key].fatHigh,
+                        fatLow: obj[key].fatLow,
+                        fattransHigh: obj[key].fattransHigh,
+                        fattransLow: obj[key].fattransLow,
+                        fatsatHigh: obj[key].fatsatHigh,
+                        fatsatLow: obj[key].fatsatLow,
+                        fiberHigh: obj[key].fiberHigh,
+                        fiberLow: obj[key].fiberLow,
+                        cookTime2h: obj[key].cookTime2h,
+                        cookTime1h: obj[key].cookTime1h,
+                        cookTime05h: obj[key].cookTime05h
+                    })
+                 }
+                commit('setUser', authUser)
+            }).catch((error) => {
+                console.log(error)
+            })
+        },
+        fetchRecipes ({commit, state}) {
+            state.loading = true;
             let userPreferences = "";
-            let u = context.state.users[0];
-            let i = context.state.users[0].interests;
+            let u = [];
+            let i = [];
+            let obj = state.currentUser;
+
+             for (let key in obj) {
+                 console.log("hey " + obj[key].macros.protein);
+                 i = obj[key].interests;
+                 u = obj[key];
+             }
 
             // Protein high
             i.bodybuilding && !u.proteinLow || u.proteinHigh || u.macros.protein >= 140 && !u.proteinLow ? userPreferences += "&nutrition.PROCNT.min=20&nutrition.PROCNT.max=50" : userPreferences += "";
@@ -142,18 +166,18 @@ export const store = new Vuex.Store({
             // Cook time 0.5 hour max
             u.cookTime05h ? userPreferences += "&maxTotalTimeInSeconds=1800" : userPreferences += "";
             
-            axios.get(YummlyGetRecipes + "&maxResult=" + context.state.currentScrollNumber + "&start=10" + userPreferences)
+            axios.get(YummlyGetRecipes + "&maxResult=" + state.currentScrollNumber + "&start=10" + userPreferences)
             .then(response => {
-                console.log(YummlyGetRecipes + "&maxResult=" + context.state.currentScrollNumber + "&start=10" + userPreferences)
-                context.commit('pushRecipes', response.data); 
+                console.log(YummlyGetRecipes + "&maxResult=" + state.currentScrollNumber + "&start=10" + userPreferences)
+                commit('pushRecipes', response.data); 
                 console.log(response.data)
-                context.state.loading = false;        
+                state.loading = false;        
             }).catch(e => {
                  console.log(e);
             })
 
         },
-        fetchSelectedRecipe(context, recipeID) {
+        fetchSelectedRecipe (context, recipeID) {
             axios.get(YummlyGetRecipe + recipeID + '?_app_id=' + YummlyApplicationID + '&_app_key=' + YummlyApplicationKey)
             .then(response => {
               context.commit('pushSelectedRecipe', response.data);
@@ -161,6 +185,11 @@ export const store = new Vuex.Store({
             }).catch(e => {
                  console.log(e);
             })
-        }      
+        },
+        listenForChanges () {
+             database.users.on('value', snap => {
+                 console.log("change! " + snap.val());
+             });
+        }     
     }
 });
