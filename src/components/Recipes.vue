@@ -6,16 +6,16 @@
       </v-card-text>
 
 <span v-if="recipes.totalMatchCount">Recipes found</span><h6><b>{{recipes.totalMatchCount}}</b></h6>
-
+<div class="spinner" v-if="loadingRecipes"><div class="double-bounce1"></div><div class="double-bounce2"></div></div>
   <v-layout row wrap>
     <v-flex xs12 sm4 v-for="(recipe, index) in recipes.matches" :key="index">
       <v-card>
         <v-card-media v-if="recipe.smallImageUrls"
           v-bind:src="changeImageSize(recipe.smallImageUrls[0])"
           width="287" height="287"
-          v-on:click.prevent="getRecipe(recipe)">
+          v-on:click.prevent="getRecipe(recipe)"> 
         </v-card-media>
-        <v-card-title primary-title>
+        <v-card-title primary-title> 
           <div>
             <div class="headline" v-on:click.prevent="getRecipe(recipe)">{{recipe.recipeName}}</div>
             <span class="grey--text">{{recipe.occasion}}</span>
@@ -45,57 +45,68 @@
 </template>
 
 <script>
+import firebase from "firebase"
+import { database } from "@/services/db"
+import { mapGetters } from 'vuex'
+
+
 export default {
   name: 'recipes',
   data: () => ({
       show: false,
       enabled: true,
+      authUser: []
     }),
-  methods: {
-      getRecipe(recipe) {
-          this.$store.dispatch('fetchSelectedRecipe', recipe.id);
-      },
-      handleScroll () {
-        if(!this.enabled) {
-            let self = this;
-            let scrollHeight = $(document).height();
-            let scrollPosition = $(window).height() + $(window).scrollTop();
-            if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
-                this.$store.dispatch('fetchAuthUser');
-                setTimeout(function(){ self.$store.dispatch('fetchRecipes') }, 1000);            
-                this.$store.dispatch('listenForChanges');
-                console.log(this.currentScrollNumber);         
-            } 
-         }        
-      },
-      changeImageSize (string) {
-        return string = string.substring(0, string.length-3) + "s320";
-      }
-  },
-  computed: {
-    recipes () {
-      return this.$store.getters.getRecipes
+    methods: {
+        getRecipe(recipe) {
+            this.$store.dispatch('fetchSelectedRecipe', recipe.id);
+        },
+        handleScroll () {
+          if(!this.enabled) {
+              let self = this;
+              let scrollHeight = $(document).height();
+              let scrollPosition = $(window).height() + $(window).scrollTop();
+              if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
+                  console.log("bottom")
+                  setTimeout(function(){ self.$store.dispatch('fetchRecipes') }, 1000);            
+                  this.$store.dispatch('listenForChanges');
+                  console.log(this.currentScrollNumber);         
+              } 
+          }        
+        },
+        changeImageSize (string) {
+          return string = string.substring(0, string.length-3) + "s320";
+        },
+        handleAuthentication () {
+          this.$store.dispatch('authenticateUser'); 
+        },
+        fetchRecipesFromAPI () {
+          this.$store.dispatch('fetchRecipes')
+        } 
     },
-    currentScrollNumber () {
-      return this.$store.getters.getCurrentScrollNumber
+    computed: {
+      ...mapGetters({
+        recipes: 'getRecipes',
+        currentScrollNumber: 'getCurrentScrollNumber',
+        loadingRecipes: 'getLoadingValue'  
+      }), 
     },
-    loadingRecipes () {
-      return this.$store.getters.getLoadingValue
+    created () { 
+       this.handleAuthentication();
+       window.addEventListener('scroll', this.handleScroll);
+    },
+    destroyed () {
+       window.removeEventListener('scroll', this.handleScroll);
+    },
+    mounted () {
+      if(!this.enabled) {
+          let self = this;
+          this.handleAuthentication();
+          //this.$store.commit('resetCurrentScrollNumber');
+          setTimeout(function(){ self.fetchRecipesFromAPI()}, 1400);    
+          this.$store.dispatch('listenForChanges')
+      }    
     }
-  },
-  created () {
-    window.addEventListener('scroll', this.handleScroll);
-  },
-  destroyed () {
-    window.removeEventListener('scroll', this.handleScroll);
-  },
-  mounted () {
-    if(!this.enabled) {
-        this.$store.dispatch('fetchAuthUser')
-        this.$store.dispatch('fetchRecipes')
-        this.$store.dispatch('listenForChanges')
-    }    
-  }
 }
 </script>
 

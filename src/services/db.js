@@ -11,11 +11,9 @@ let config = {
 };
 export let app = firebase.initializeApp(config);
 export let db = app.database(); 
+export let rootRef = firebase.database().ref();
 
 export const database = {
-     users: db.ref('users/'),
-     user: db.ref('users/1')
+     users: db.ref('users'),
+     user: rootRef.child('users').orderByChild('uid')
 }
-
-// export let storageRef = firebase.storage().ref();
-// export let test = storageRef.child('items/');

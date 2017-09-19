@@ -1,98 +1,96 @@
 <template id="upload-image">
     <div>
-        <div class="col-xs-12 col-sm-4">
-            <div class="form-group">
-                  <label id="label-picture">Picture</label>
-                  <input type="file" v-on:change="onFileChange" id="input">
-                </div>
-                <br />
-                  <img v-bind:src="newItem.image" id="image" width="200" />
-                  <div class="loader" id="loader"></div>
-              <div v-on:click="removeImage" class="btn btn-default image-button" id="remove-src">Remove image</div>
-        </div>
+         <v-flex xs6 md2>     
+              <label style="float:left" class="subheading image-title">Picture</label><br /><br />
+              <input type="file" v-on:change="onUploadImage" id="input">           
+            <div class="image-holder">
+               <v-layout row wrap >
+                    <v-flex xs12 sm6>
+                        <img v-bind:src="newUser.picture" id="image" width="100%" height="auto" />
+                        <div class="spinner" v-if="loadingImage"><div class="double-bounce1"></div><div class="double-bounce2"></div></div>
+                    </v-flex>
+                    <v-flex xs12 sm6>
+                        <v-btn flat v-on:click="removeImage()" id="remove-image">Clear image</v-btn>
+                    </v-flex>
+                 </v-layout>
+              </div>
+        </v-flex>
     </div>
-
 </template>
 <script>
-import * as config from '@/config.js'
+import firebase from "firebase"
 
 export default {
   name: 'upload-image',
-  firebase: {
-         items: config.itemsRef,
-     },
   data() {
     return {
-        newItem: {
-            image: ''
+        image: '',
+        loadingImage: false,
+        newUser: {
+            picture: '',
         }
     } 
   },
   methods: {
-       onFileChange(e) {           
-          var img = document.getElementById("image");
-          var loader = document.getElementById("loader");
-          var input = document.getElementById("input");
-          var removeSrc = document.getElementById("remove-src");
-          var button = document.getElementById("create-item");
-          var label = document.getElementById("label-picture");
-
-          loader.style.display = "inline-block";
-          input.style.display = "none";
-          label.style.display = "none";
-          
-          var file = e.target.files[0];  
-          var metadata = {'contentType': file.type}
-          var uploadTask = config.storageRef.child('images/' + file.name).put(file, metadata).then(function(snapshot) {
-            //console.log('Uploaded', snapshot.totalBytes, 'bytes.');
-            //console.log(snapshot.metadata);
-            var url = snapshot.downloadURL;
-            console.log('url: ' + url)
-            img.src = url;
-
-            loader.style.display = "none";
-            input.style.display = "inline-block";
-            removeSrc.style.display = "inline-block";
-            label.style.display = "inline-block";
-            img.style.display = "inline-block";
-            button.disabled = false;
-     
+       onUploadImage (e) {
+          this.loadingImage = true;
+          let self = this;
+          let img = jQuery("#image");
+          let title = jQuery(".image-title");
+          let input = jQuery("#input");
+          let remove = jQuery("#remove-image");
+          input.css("display", "none");
+          title.css("display", "none");
+          let file = e.target.files[0];  
+          let metadata = {'contentType': file.type}
+          let uploadTask = firebase.storage().ref().child('images/' + file.name)
+          .put(file, metadata).then(function(snapshot) {
+              console.log(snapshot);
+              self.loadingImage = false;
+              self.image = snapshot.metadata.name;
+              self.newUser.picture = snapshot.downloadURL;
+              img.css( "display", "inline-block");
+              remove.css("display", "inline-block");
             }).catch(function(error) {
                 console.error('Upload failed:', error);
          }); 
       },
-      removeImage: function () { 
-             var img = document.getElementById("image");
-             var removeSrc = document.getElementById("remove-src");    
-             var input = document.getElementById("input"); 
-             removeSrc.style.display = "none";
-             img.style.display = "none";
-             input.value = ''; // doesn't work in IE
+      removeImage () {
+          let self = this;
+          let img = jQuery("#image");
+          let input = jQuery("#input");
+          let remove = jQuery("#remove-image");
+          let title = jQuery(".image-title");
+          firebase.storage().ref().child('images/' + this.image).delete().then(function() {
+              self.newUser.picture = "";
+              img.attr("src", "");
+              img.css("display", "none");
+              input.css("display", "inline-block");
+              input.val("");
+              title.css("display", "inline-block");
+              remove.css("display", "none");
+          }).catch(function(error) {
+              console.log(error);
+          });
       }
    }
 }
 </script>
 <style>
-     .image-button {
-        margin-left: 5%;
-    }
-    #remove-src {
-        display: none;
-    }
-    #loader {
-        display: none;
-        margin-right: 35%;
-    }
-    .loader {
-        border: 5px solid #f3f3f3; /* Light grey */
-        border-top: 5px solid #3498db; /* Blue */
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1.5s linear infinite;
-    }
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
+.image-holder {
+  width: 100%;
+  height: 100%;
+  min-width: 300px;
+  margin-bottom: 50%;
+}
+#remove-image {
+  display: none;
+  margin-left: 15%;
+  margin-top: 50%;
+}
+#image {
+  display: none;
+  height: 100%;
+  width: 100%;
+}
 </style>
