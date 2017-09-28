@@ -6,16 +6,15 @@
       </v-card-text>
 
 <span v-if="recipes.totalMatchCount">Recipes found</span><h6><b>{{recipes.totalMatchCount}}</b></h6>
-<div class="spinner" v-if="loadingRecipes"><div class="double-bounce1"></div><div class="double-bounce2"></div></div>
   <v-layout row wrap>
     <v-flex xs12 sm4 v-for="(recipe, index) in recipes.matches" :key="index">
       <v-card>
         <v-card-media v-if="recipe.smallImageUrls"
           v-bind:src="changeImageSize(recipe.smallImageUrls[0])"
           width="287" height="287"
-          v-on:click.prevent="getRecipe(recipe)"> 
+          v-on:click.prevent="getRecipe(recipe)">
         </v-card-media>
-        <v-card-title primary-title> 
+        <v-card-title primary-title>
           <div>
             <div class="headline" v-on:click.prevent="getRecipe(recipe)">{{recipe.recipeName}}</div>
             <span class="grey--text">{{recipe.occasion}}</span>
@@ -39,7 +38,7 @@
     </v-flex>
   </v-layout>
 
-  <div class="spinner" v-if="loadingRecipes"><div class="double-bounce1"></div><div class="double-bounce2"></div></div>
+  <!--<div class="spinner" v-if="loadingRecipes"><div class="double-bounce1"></div><div class="double-bounce2"></div></div>-->
 
   </div>
 </template>
@@ -68,30 +67,31 @@ export default {
               let scrollPosition = $(window).height() + $(window).scrollTop();
               if ((scrollHeight - scrollPosition) / scrollHeight === 0) {
                   console.log("bottom")
-                  setTimeout(function(){ self.$store.dispatch('fetchRecipes') }, 1000);            
+                  this.$store.commit('setLoading', true);
+                  setTimeout(function(){ self.$store.dispatch('fetchRecipes') }, 1000);
                   this.$store.dispatch('listenForChanges');
-                  console.log(this.currentScrollNumber);         
-              } 
-          }        
+                  console.log(this.currentScrollNumber);
+              }
+          }
         },
         changeImageSize (string) {
           return string = string.substring(0, string.length-3) + "s320";
         },
         handleAuthentication () {
-          this.$store.dispatch('authenticateUser'); 
+          this.$store.dispatch('authenticateUser');
         },
         fetchRecipesFromAPI () {
           this.$store.dispatch('fetchRecipes')
-        } 
+        }
     },
     computed: {
       ...mapGetters({
         recipes: 'getRecipes',
         currentScrollNumber: 'getCurrentScrollNumber',
-        loadingRecipes: 'getLoadingValue'  
-      }), 
+        loadingRecipes: 'getLoadingValue'
+      }),
     },
-    created () { 
+    created () {
        this.handleAuthentication();
        window.addEventListener('scroll', this.handleScroll);
     },
@@ -101,11 +101,12 @@ export default {
     mounted () {
       if(!this.enabled) {
           let self = this;
+          this.$store.commit('setLoading', true);
           this.handleAuthentication();
           //this.$store.commit('resetCurrentScrollNumber');
-          setTimeout(function(){ self.fetchRecipesFromAPI()}, 1400);    
+          setTimeout(function(){ self.fetchRecipesFromAPI()}, 1400);
           this.$store.dispatch('listenForChanges')
-      }    
+      }
     }
 }
 </script>
@@ -144,7 +145,7 @@ export default {
   position: absolute;
   top: 0;
   left: 0;
-  
+
   -webkit-animation: sk-bounce 2.0s infinite ease-in-out;
   animation: sk-bounce 2.0s infinite ease-in-out;
 }
@@ -160,10 +161,10 @@ export default {
 }
 
 @keyframes sk-bounce {
-  0%, 100% { 
+  0%, 100% {
     transform: scale(0.0);
     -webkit-transform: scale(0.0);
-  } 50% { 
+  } 50% {
     transform: scale(1.0);
     -webkit-transform: scale(1.0);
   }

@@ -366,9 +366,9 @@ export default {
         running: false,
         biking: false,
         bodybuilding: false,
-        carbs: '',
-        fat: '',
-        protein: '',
+        carbs: false,
+        fat: false,
+        protein: false,
         loadingImage: false,
         image: '',
         newUser: {
@@ -430,9 +430,8 @@ export default {
         let email = this.newUser.email;
         let password = this.newUser.password;
         let self = this;
-        this.newUser.picture === "" ? "http://via.placeholder.com/200x200" : this.newUser.picture;
+       
         firebase.auth().createUserWithEmailAndPassword(email, password).then(function (response) {
-          //console.log(response)
           self.writeUserData(response.uid, self.newUser.name, email, password, 
             self.newUser.age, self.newUser.height, self.newUser.weight, self.newUser.gender, self.newUser.picture,
             self.newUser.interests = {Running: self.running, Biking: self.biking, Bodybuilding: self.bodybuilding},

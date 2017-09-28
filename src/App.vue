@@ -1,6 +1,7 @@
 <template>
-  <div id="app">
-    <div v-if="!userSignedIn">
+  <div id="app" v-bind:class="[{ changeIndex: loadingRecipes }]">
+    <div class="overlay" v-if="loadingRecipes"><div class="spinner"><div class="double-bounce1"></div><div class="double-bounce2"></div></div></div>
+    <div v-if="!userSignedIn && !checkView()">
      <v-app>
         <main>
           <v-container fluid>
@@ -9,7 +10,16 @@
             </transition>
           </v-container>
         </main>
-        </v-app>
+      </v-app>
+    </div>
+    <div v-else-if="checkView()">
+      <v-app>
+        <main>
+            <transition name="slide-fade">
+                <router-view></router-view>
+            </transition>
+        </main>
+      </v-app>
     </div>
     <div v-else>
         <v-app toolbar>
@@ -126,7 +136,6 @@
           <v-footer></v-footer>
         </v-app>
     </div>
-
   </div>
 </template>
 
@@ -141,6 +150,8 @@ export default {
       user: [],
       userSignedIn: false,
       drawer: true,
+      isActive: false,
+      frontPageView: false,
       items: [
         {icon: 'person', title: 'Profile', link: '/profile'},
       ],
@@ -171,9 +182,10 @@ export default {
       },
       updatePreference (user) {
          let self = this;
+         this.$store.commit('setLoading', true);
+         this.$store.commit('resetCurrentScrollNumber');
          this.$store.commit('updateUserPreference', user);
          setTimeout(function(){ self.$store.dispatch('fetchRecipes'); }, 1000);   
-         //setTimeout(function(){ self.$store.getters.fetchRecipes;}, 1000);  
       }, 
       userIsAuthenticated () {
         //return this.$store.getters.getUser !== null && this.$store.getters.getUser !== undefined
@@ -184,6 +196,9 @@ export default {
             } else {}
           }); 
       },
+      checkView () {
+        if(window.location == "http://localhost:8080/#/") return true;
+      }
   },
   computed: {    
       menuItems () {
@@ -196,6 +211,9 @@ export default {
       },
       getUserInformation () {
         return this.$store.getters.getUser;
+      },
+      loadingRecipes () {
+        return this.$store.getters.getLoadingValue;
       }
   },
   created () {
@@ -214,6 +232,9 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+.activeClass {
+  background: red;
 }
 .navigation-drawer {
   top: -60px;
@@ -235,5 +256,65 @@ export default {
 }
 nav {
   box-shadow: 0px 0px 8px 0px #888888 !important;
+}
+.overlay {
+    position: absolute;
+    background: #f2f2f2;
+    opacity: 0.8;
+    left: 0;
+    right: 0;
+    top: -60px;
+    bottom: 0;
+    z-index: 100000;
+    min-height:1000px;
+}
+.changeIndex {
+  position:relative;
+  z-index: -1;
+}
+.spinner {
+  width: 80px;
+  height: 80px;
+  position: fixed;
+  right: 0;
+    left: 0;
+    margin-right: auto;
+    margin-left: auto;
+    top: 50%;
+}
+
+.double-bounce1, .double-bounce2 {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  /*background-color: #bfbfbf;*/
+  background-color: grey;
+  opacity: 0.5;
+  position: absolute;
+  top: 0;
+  left: 0;
+  
+  -webkit-animation: sk-bounce 2.0s infinite ease-in-out;
+  animation: sk-bounce 2.0s infinite ease-in-out;
+}
+
+.double-bounce2 {
+  -webkit-animation-delay: -1.0s;
+  animation-delay: -1.0s;
+}
+
+@-webkit-keyframes sk-bounce {
+  0%, 100% { -webkit-transform: scale(0.0) }
+  50% { -webkit-transform: scale(1.0) }
+}
+
+@keyframes sk-bounce {
+  0%, 100% { 
+    transform: scale(0.0);
+    -webkit-transform: scale(0.0);
+  } 50% { 
+    transform: scale(1.0);
+    -webkit-transform: scale(1.0);
+  }
 }
 </style>

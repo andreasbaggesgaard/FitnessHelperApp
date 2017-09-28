@@ -60,8 +60,8 @@ export const store = new Vuex.Store({
         resetCurrentScrollNumber (state) {
             state.currentScrollNumber = 12;
         },
-        setUser (state, payload) {
-           // state.currentUser = payload
+        setLoading (state, payload) {
+           state.loading = payload;
         },
         setCurrentUser (state, payload) {
             state.currentUser = [];
@@ -156,9 +156,6 @@ export const store = new Vuex.Store({
              }); 
         },
         fetchRecipes (context) {
-            context.state.loading = true;
-            console.log("from recipes " + context.state.currentUser[0]);
-
             let userPreferences = "";
             let u = context.state.currentUser[0];   
             let i = context.state.currentUser[0].interests; 
@@ -166,15 +163,15 @@ export const store = new Vuex.Store({
             // Protein high
             i.Bodybuilding == true && u.proteinLow != true || u.proteinHigh == true || u.macros.Protein >= 140 && !u.proteinLow ? userPreferences += "&nutrition.PROCNT.min=20&nutrition.PROCNT.max=50" : userPreferences += "";
             // Protein low
-            u.proteinLow == true || u.macros.Protein <= 80 && u.proteinHigh != true ? userPreferences += "&nutrition.PROCNT.min=0&nutrition.PROCNT.max=5" : userPreferences += "";
+            u.proteinLow == true || u.macros.Protein <= 80 && u.proteinHigh != true && u.macros.Protein != false ? userPreferences += "&nutrition.PROCNT.min=0&nutrition.PROCNT.max=5" : userPreferences += "";
             // Carbs high
             i.running == true && u.carbsLow != true || i.biking == true && u.carbsLow != true || u.carbsHigh == true || u.macros.Carbs >= 350 && u.carbsLow != true ? userPreferences += "&nutrition.CHOCDF.min=20&nutrition.CHOCDF.max=50" : userPreferences += "";
             // Carbs low
-            u.carbsLow == true || u.macros.Carbs <= 250 && !u.carbsHigh ? userPreferences += "&nutrition.CHOCDF.min=0&nutrition.CHOCDF.max=5" : userPreferences += "";
+            u.carbsLow == true || u.macros.Carbs <= 250 && !u.carbsHigh && u.macros.Carbs != false ? userPreferences += "&nutrition.CHOCDF.min=0&nutrition.CHOCDF.max=5" : userPreferences += "";
             // Fat high
             u.fatHigh == true || u.macros.Fat >= 90 && u.fatLow != true ? userPreferences += "&nutrition.FAT.min=20&nutrition.FAT.max=50" : userPreferences += "";
             // Fat low
-            u.fatLow == true || u.macros.Fat <= 60 ? userPreferences += "&nutrition.FAT.min=0&nutrition.FAT.max=5" : userPreferences += "";
+            u.fatLow == true || u.macros.Fat <= 60 && u.macros.Fat != false ? userPreferences += "&nutrition.FAT.min=0&nutrition.FAT.max=5" : userPreferences += "";
             // Fatty acids, total trans - high
             u.fattransHigh == true ? userPreferences += "&nutrition.FATRN.min=20&nutrition.FATRN.max=50" : userPreferences += "";
             // Fatty acids, total trans - low
