@@ -1,7 +1,7 @@
 <template>
   <div id="app" v-bind:class="[{ changeIndex: loadingRecipes }]">
     <div class="overlay" v-if="loadingRecipes"><div class="spinner"><div class="double-bounce1"></div><div class="double-bounce2"></div></div></div>
-    <div v-if="!userSignedIn && !checkView()">
+    <div v-if="!user && !checkView()">
      <v-app>
         <main>
           <v-container fluid>
@@ -116,15 +116,11 @@
                   </v-card-text>
                 </v-card>
                </v-list-tile>
-                <v-list-tile-action>
-                 <v-list-tile-content><v-btn v-on:click="trigger()">click</v-btn></v-list-tile-content>
-                    
-                  </v-list-tile-action>
             </v-list>            
           </v-navigation-drawer>
             <v-toolbar fixed class="blue darken-1" dark>
               <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-              <v-toolbar-title>Fitness Helper</v-toolbar-title>
+              <router-link to="/"><v-toolbar-title>Fitness Helper</v-toolbar-title></router-link>
             </v-toolbar>
             <main>
             <v-container fluid>
@@ -147,8 +143,6 @@ export default {
   name: 'app',
    data () {
     return {
-      user: [],
-      userSignedIn: false,
       drawer: true,
       isActive: false,
       frontPageView: false,
@@ -161,24 +155,8 @@ export default {
     } 
    },
   methods: {
-    logOut () {
-        this.$store.dispatch('logOut')
-        this.userSignedIn = false
-        window.location = "http://localhost:8080/#/"
-        toastr.success("You are now logged out");
-      },
-      trigger () {
-        let self = this;
-          firebase.auth().onAuthStateChanged(function(user) {
-              if (user) {
-                  self.$store.commit('setCurrentUser', user);  
-              } else {
-                  window.location = "http://localhost:8080/#/";
-              }
-          });  
-          this.$store.commit('resetCurrentScrollNumber');
-          setTimeout(function(){ self.$store.dispatch('fetchRecipes'); }, 1000);   
-          setTimeout(function(){ self.$store.getters.fetchRecipes;}, 1000);          
+      logOut () {
+        this.$store.dispatch('logOut');
       },
       updatePreference (user) {
          let self = this;
@@ -186,16 +164,8 @@ export default {
          this.$store.commit('resetCurrentScrollNumber');
          this.$store.commit('updateUserPreference', user);
          setTimeout(function(){ self.$store.dispatch('fetchRecipes'); }, 1000);   
+        //  setTimeout(function(){ self.$store.getters.fetchRecipes;}, 1000);  
       }, 
-      userIsAuthenticated () {
-        //return this.$store.getters.getUser !== null && this.$store.getters.getUser !== undefined
-          let self = this;
-          firebase.auth().onAuthStateChanged(function(user) {
-            if (user) {
-                self.userSignedIn = true;
-            } else {}
-          }); 
-      },
       checkView () {
         if(window.location == "http://localhost:8080/#/") return true;
       }
@@ -214,11 +184,13 @@ export default {
       },
       loadingRecipes () {
         return this.$store.getters.getLoadingValue;
-      }
+      },
+      user () {
+        return this.$store.getters.getLoggedIn;
+      }   
   },
   created () {
-    let self = this;
-    this.userIsAuthenticated();
+    this.$store.dispatch('userIsLoggedIn');
     this.getUserInformation; 
   }
 }
@@ -316,5 +288,9 @@ nav {
     transform: scale(1.0);
     -webkit-transform: scale(1.0);
   }
+}
+a {
+  color: white;
+    text-decoration: none;
 }
 </style>

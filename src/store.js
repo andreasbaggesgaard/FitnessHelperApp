@@ -5,6 +5,7 @@ import { database } from "@/services/db"
 import axios from "axios"
 import router from "@/router/index"
 import firebase from "firebase"
+import toastr from "toastr"
 //import * as firebase from 'firebase'
 
 Vue.use(Vuex)
@@ -17,13 +18,18 @@ const YummlyGetRecipe = "http://api.yummly.com/v1/api/recipe/";
 
 export const store = new Vuex.Store({
     state: {
+        loggedIn: false,
         currentUser: [],
         recipes: [],
         selectedRecipe: [],
         currentScrollNumber: 12,
         loading: false,
+        dialog: false,
     },
     getters: {
+        getLoggedIn (state) {
+            return state.loggedIn;
+        },
         getUser (state) {
             return state.currentUser[0];
         },
@@ -39,6 +45,9 @@ export const store = new Vuex.Store({
          getLoadingValue(state) {
             return state.loading;
         },
+        getDialogValue(state) {
+            return state.dialog;
+        }
         // getUsers(state) {
         //     return state.users;
         // }
@@ -49,6 +58,9 @@ export const store = new Vuex.Store({
         // },
     },
     mutations: {  
+        changeStatus (state, payload) {
+            state.loggedIn = payload;
+        },
         pushRecipes (state, payload) {
             state.recipes = payload;
             state.currentScrollNumber = state.currentScrollNumber + 15;
@@ -62,6 +74,9 @@ export const store = new Vuex.Store({
         },
         setLoading (state, payload) {
            state.loading = payload;
+        },
+        showDialog (state, payload) {
+           state.dialog = payload;
         },
         setCurrentUser (state, payload) {
             state.currentUser = [];
@@ -136,24 +151,41 @@ export const store = new Vuex.Store({
     actions: {
         logOut ({commit}) {
             firebase.auth().signOut();
+            window.location = "http://localhost:8080/#/"
+            toastr.success("You are now logged out");
+        },
+        logIn (context, email, password) {
+            firebase.auth().signInWithEmailAndPassword(email, password).then(function (response) {
+                console.log(response);
+                //context.commit('setCurrentUser', user);  
+                window.location = "http://localhost:8080/#/recipes";
+            }).catch(function(error) {
+                let errorMessage = error.message;
+                if(errorMessage){
+                    toastr.error(errorMessage);
+                } 
+            });
         },
         authenticateUser ({commit}) { 
             let self = this;
              firebase.auth().onAuthStateChanged(function(user) {
                  if (user) {
-                     var displayName = user.displayName;
-                     var email = user.email;
-                     var emailVerified = user.emailVerified;
-                     var photoURL = user.photoURL;
-                     var isAnonymous = user.isAnonymous;
-                     var uid = user.uid;
-                     var providerData = user.providerData; 
                      commit('setCurrentUser', user);  
                  } else {
                      //this.$router.push('/'); 
                      window.location = "http://localhost:8080/#/";
                  }
              }); 
+        },
+        userIsLoggedIn ({commit}) {
+          let self = this;
+          firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                commit('changeStatus', true);  
+            } else {
+                commit('changeStatus', false);
+            }
+          }); 
         },
         fetchRecipes (context) {
             let userPreferences = "";

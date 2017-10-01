@@ -1,6 +1,10 @@
 <template>
 <div>
-<section>
+<section v-bind:class="[{ triggered: dialogValue }]">
+    <v-toolbar class="blue darken-1 frontnavbar" dark>
+      <router-link to="/"><v-toolbar-title>Fitness Helper</v-toolbar-title></router-link>
+        <navbar></navbar>
+     </v-toolbar>
         <v-parallax src="https://andreasbaggesgaard.dk/hero.jpeg" height="600">
           <v-layout
             column
@@ -8,7 +12,6 @@
             justify-center
             class="white--text"
           >
-            <img src="assets/vuetify.png" alt="Vuetify.js">
             <h1 class="white--text mb-2 display-3">Fitness Helper</h1>
             <div class="headline mb-3 text-xs-center">Everything you need to know</div>
             <v-btn
@@ -23,7 +26,7 @@
         </v-parallax>
       </section>
 
-      <section>
+      <section v-bind:class="[{ triggered: dialogValue }]">
         <v-layout
           column
           wrap
@@ -92,7 +95,7 @@
         </v-layout>
       </section>
 
-      <section>
+      <section v-bind:class="[{ triggered: dialogValue }]">
         <v-parallax src="https://andreasbaggesgaard.dk/section.jpeg" height="380">
           <v-layout column align-center justify-center>
             <div class="headline white--text mb-3">Web development has never been easier</div>
@@ -109,7 +112,7 @@
         </v-parallax>
       </section>
 
-      <section>
+      <section v-bind:class="[{ triggered: dialogValue }]">
         <v-container grid-list-xl>
           <v-layout row wrap justify-center class="my-5">
             <v-flex xs12 sm4>
@@ -164,17 +167,109 @@
         </v-container>
       </section>
 
-      <v-footer class="blue darken-2">
-        <v-layout row wrap align-center>
-          <v-flex xs12>
-            <div class="white--text ml-3">
-              Made with
-              <v-icon class="red--text">favorite</v-icon>
-              by <a class="white--text" href="https://vuetifyjs.com" target="_blank">Vuetify</a>
-              and <a class="white--text" href="mailto:costa.huang@outlook.com">Costa Huang</a>
-            </div>
-          </v-flex>
-        </v-layout>
-      </v-footer>
+    <transition name="fade">
+      <v-layout row justify-center style="position: fixed; top: 100px; left:0; right:0;" v-if="dialogValue">
+          <v-card style="box-shadow: 0px 0px 1px 0px #888888; width:40%;">
+            <v-card-title>
+              <div class="headline">Login</div>
+            </v-card-title>
+            <v-card-text>
+            <v-form v-model="valid">
+                <v-text-field 
+                  label="E-mail"
+                  v-model="email"
+                  :rules="emailRules"
+                  required
+                ></v-text-field>
+                <v-text-field
+                  label="Password"
+                  v-model="password"
+                  required
+                ></v-text-field>
+              </v-form>
+             <v-btn class="">reset password</v-btn>
+            </v-card-text>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn class="" flat="flat" v-on:click.native="hideDialog ()">Cancel</v-btn>
+              <v-btn primary v-on:click.prevent="logIn ()">Login</v-btn>
+            </v-card-actions>
+          </v-card>
+      </v-layout>
+    </transition>
+
       </div>
 </template>
+
+<script>
+import navbar from "@/components/navbar"
+import toastr from "toastr"
+import firebase from "firebase"
+
+export default {
+  name: 'frontpage',
+  data() {
+    return {
+      valid: false,
+      email: '',
+      emailRules: [
+          (v) => !!v || 'E-mail is required',
+          (v) => /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(v) || 'E-mail must be valid'
+        ],
+      password: '',   
+      passwordRules: [
+        (v) => !!v || 'Password is required'
+      ],
+    } 
+  },
+  methods: {
+    hideDialog () {
+        this.$store.commit('showDialog', false);
+    },
+    logInUser () {
+      if(this.valid) {
+        this.$store.dispatch('logIn', this.email, this.password);    
+      } else {
+        toastr.error("Fill out email and password");
+      }     
+    },
+    logIn () {
+        let self = this;
+        let email = this.email
+        let password = this.password
+        firebase.auth().signInWithEmailAndPassword(email, password).then(function (response) {
+          self.$store.commit('showDialog', false);
+          window.location = "http://localhost:8080/#/recipes"
+        }).catch(function(error) {
+          let errorCode = error.code; 
+          let errorMessage = error.message;
+          if(errorMessage){
+              toastr.error(errorMessage);
+          } 
+        });
+    },
+  },
+  computed: {
+      dialogValue () {
+        return this.$store.getters.getDialogValue;
+      }
+  },
+  components: {
+    navbar
+  }
+}
+</script>
+<style>
+.frontnavbar {
+  margin-top: -60px !important;
+}
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0
+}
+.triggered {
+  opacity: 0;
+}
+</style>

@@ -600,6 +600,7 @@ export default {
 </script> 
 
 <style scoped>
+
 .register {
   margin-top: -50px !important;
 }
